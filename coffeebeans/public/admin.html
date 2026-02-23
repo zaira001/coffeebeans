@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoffeeBeans — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,400;1,9..144,300;1,9..144,500&family=Syne:wght@500;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1c1814;--surface:#231e19;--card:#2a2420;--card-hover:#302a25;--sidebar:#1f1b17;--border:rgba(200,160,110,0.1);--border-hover:rgba(200,160,110,0.22);--accent:#c8845a;--accent-light:#e0a878;--accent-glow:rgba(200,132,90,0.12);--text:#ede0d0;--text-muted:#7a6a5a;--text-soft:#b09080;--white:#f8f2ea;--red:#c84040;--green:#70a870}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif;min-height:100vh;overflow-x:hidden}
+body.locked{overflow:hidden}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;opacity:.5}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--bg);z-index:5000;display:flex;align-items:center;justify-content:center}
+.login-box{width:min(400px,90vw);animation:popIn .5s cubic-bezier(.34,1.4,.64,1)}
+@keyframes popIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
+.login-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;letter-spacing:.2em;text-transform:uppercase;color:var(--white);display:flex;align-items:center;gap:.6rem;margin-bottom:3rem}
+.login-logo .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.login-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:.8rem}
+.login-title{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:200;color:var(--white);margin-bottom:.4rem}
+.login-sub{font-family:'Fraunces',serif;font-style:italic;font-size:.9rem;color:var(--text-muted);margin-bottom:2.2rem}
+.lfield{margin-bottom:1.2rem}
+.lfield label{display:block;font-family:'JetBrains Mono',monospace;font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.45rem}
+.lfield input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;font-family:'Fraunces',serif;font-size:.95rem;font-weight:300;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+.lfield input:focus{border-color:rgba(200,132,90,.45);box-shadow:0 0 0 3px rgba(200,132,90,.08)}
+.lerr{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--red);margin-top:.35rem;display:none}
+.lbtn{width:100%;margin-top:1.6rem;padding:.85rem;background:var(--accent);color:var(--bg);border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .22s}
+.lbtn:hover{background:var(--accent-light);box-shadow:0 8px 24px rgba(200,132,90,.28);transform:translateY(-1px)}
+.lbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.back-link{margin-top:1.5rem;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text-muted);letter-spacing:.08em;cursor:pointer;transition:color .2s;display:inline-block;text-decoration:none}
+.back-link:hover{color:var(--text-soft)}
+
+/* ADMIN LAYOUT */
+#adminUI{display:none;min-height:100vh;flex-direction:column}
+#adminUI.show{display:flex}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:900;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;background:rgba(28,24,20,.88);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.tb-left{display:flex;align-items:center;gap:1.2rem}
+.tb-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;letter-spacing:.18em;text-transform:uppercase;color:var(--white);display:flex;align-items:center;gap:.5rem}
+.tb-logo .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:blink 2.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.tb-div{width:1px;height:20px;background:var(--border)}
+.tb-badge{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;padding:.22rem .65rem;border-radius:4px;background:rgba(200,132,90,.12);color:var(--accent);border:1px solid rgba(200,132,90,.25)}
+.tb-right{display:flex;align-items:center;gap:.8rem}
+.tb-btn{font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.35rem .9rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .2s}
+.tb-btn:hover{color:var(--text);border-color:var(--border-hover)}
+.tb-btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.tb-btn.primary:hover{background:var(--accent-light);box-shadow:0 4px 16px rgba(200,132,90,.28);transform:translateY(-1px)}
+.admin-main{margin-top:60px;display:flex;min-height:calc(100vh - 60px);position:relative;z-index:1}
+.sidebar{width:260px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);padding:2rem 1.5rem;display:flex;flex-direction:column;gap:1.8rem}
+.sb-label{font-family:'JetBrains Mono',monospace;font-size:.54rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.9rem}
+.stat-row{display:flex;flex-direction:column;gap:.6rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.stat-val{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:200;color:var(--white)}
+.cat-list{display:flex;flex-direction:column;gap:.3rem}
+.cat-item{display:flex;align-items:center;justify-content:space-between;padding:.5rem .7rem;border-radius:6px;font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;transition:all .18s;border:1px solid transparent}
+.cat-item:hover,.cat-item.on{color:var(--accent-light);background:var(--accent-glow);border-color:rgba(200,132,90,.15)}
+.cat-count{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text-muted)}
+.sb-div{width:100%;height:1px;background:var(--border)}
+.content{flex:1;padding:2.5rem 2rem;overflow-y:auto}
+.content-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem}
+.content-title{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:200;color:var(--white)}
+.content-sub{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text-muted);letter-spacing:.08em;margin-top:.2rem}
+.entry-list{display:flex;flex-direction:column;gap:1px;background:var(--border);border-radius:8px;overflow:hidden}
+.entry-row{background:var(--card);padding:1.4rem 1.6rem;display:flex;align-items:flex-start;gap:1.5rem;transition:background .2s;animation:up .4s ease both}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.entry-row:hover{background:var(--card-hover)}
+.er-num{font-family:'Fraunces',serif;font-style:italic;font-size:.75rem;color:var(--text-muted);opacity:.4;flex-shrink:0;padding-top:.2rem;width:28px}
+.er-body{flex:1;min-width:0}
+.er-top{display:flex;align-items:center;gap:.7rem;margin-bottom:.5rem;flex-wrap:wrap}
+.er-chip{font-family:'JetBrains Mono',monospace;font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;padding:.18rem .55rem;border-radius:3px;background:rgba(200,132,90,.08);border:1px solid rgba(200,132,90,.2);color:var(--accent)}
+.er-title{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:200;color:var(--white);margin-bottom:.3rem}
+.er-preview{font-family:'Fraunces',serif;font-size:.82rem;font-style:italic;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px}
+.er-meta{flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:.6rem}
+.er-date{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text-muted);letter-spacing:.05em;white-space:nowrap}
+.del-btn{width:28px;height:28px;border-radius:6px;border:1px solid rgba(200,60,60,.2);background:transparent;color:var(--red);font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;opacity:.6}
+.del-btn:hover{background:rgba(200,60,60,.12);opacity:1;border-color:var(--red)}
+.empty-list{padding:5rem 2rem;text-align:center}
+.empty-list span{font-size:2rem;display:block;opacity:.3;margin-bottom:1rem}
+.empty-list p{font-family:'Fraunces',serif;font-style:italic;font-size:1rem;color:var(--text-muted)}
+
+/* WRITE PANEL */
+.write-panel{display:none;position:fixed;top:0;right:0;bottom:0;width:min(540px,100vw);background:var(--surface);border-left:1px solid var(--border);z-index:800;box-shadow:-24px 0 60px rgba(0,0,0,.4);flex-direction:column;animation:slideIn .3s cubic-bezier(.4,0,.2,1)}
+.write-panel.show{display:flex}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.wp-head{padding:1.5rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.wp-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;color:var(--white)}
+.wp-close{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.wp-close:hover{color:var(--text);border-color:var(--border-hover)}
+.wp-body{flex:1;overflow-y:auto;padding:2rem}
+.wfield{margin-bottom:1.4rem}
+.wfield label{display:block;font-family:'JetBrains Mono',monospace;font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.45rem}
+.wfield input,.wfield textarea,.wfield select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;font-family:'Fraunces',serif;font-size:.95rem;font-weight:300;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;resize:vertical;-webkit-appearance:none}
+.wfield select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a6a5a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .9rem center;padding-right:2.5rem;cursor:pointer}
+.wfield select option{background:var(--card)}
+.wfield input:focus,.wfield textarea:focus,.wfield select:focus{border-color:rgba(200,132,90,.4);box-shadow:0 0 0 3px rgba(200,132,90,.07)}
+.wfield textarea{min-height:220px;line-height:1.75}
+.char-count{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text-muted);text-align:right;margin-top:.3rem}
+.wp-foot{padding:1.2rem 2rem;border-top:1px solid var(--border);display:flex;gap:.7rem;justify-content:flex-end;flex-shrink:0}
+.wcancel{font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.6rem 1.2rem;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .2s}
+.wcancel:hover{color:var(--text);border-color:var(--border-hover)}
+.wpublish{font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.6rem 1.6rem;border-radius:7px;border:none;background:var(--accent);color:var(--bg);cursor:pointer;transition:all .22s}
+.wpublish:hover{background:var(--accent-light);box-shadow:0 6px 20px rgba(200,132,90,.28);transform:translateY(-1px)}
+.wpublish:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.panel-dim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:799;display:none;backdrop-filter:blur(3px)}
+.panel-dim.show{display:block}
+
+/* STATUS */
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:.4rem;vertical-align:middle}
+.status-dot.ok{background:var(--green)}
+.status-dot.err{background:var(--red);animation:blink 1s infinite}
+.server-status{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--text-muted);letter-spacing:.06em}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(70px);background:var(--card-hover);border:1px solid var(--border-hover);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.08em;padding:.75rem 1.4rem;border-radius:100px;z-index:9000;box-shadow:0 8px 28px rgba(0,0,0,.4);transition:transform .38s cubic-bezier(.34,1.4,.64,1);white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.tdot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-right:.5rem;vertical-align:middle}
+
+@media(max-width:700px){
+  .admin-main{flex-direction:column}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);padding:1.2rem}
+  .stat-row{flex-direction:row;flex-wrap:wrap}
+  .stat-card{flex:1;min-width:100px}
+  .content{padding:1.5rem}
+  .write-panel{width:100vw}
+}
+</style>
+</head>
+<body class="locked">
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo"><div class="dot"></div>CoffeeBeans</div>
+    <p class="login-eyebrow">Admin Dashboard</p>
+    <h2 class="login-title">Welcome back.</h2>
+    <p class="login-sub">Sign in to manage your journal.</p>
+    <div class="lfield">
+      <label>Password</label>
+      <input type="password" id="pwInput" placeholder="Enter your password" onkeydown="if(event.key==='Enter')tryLogin()">
+      <p class="lerr" id="lerr">Incorrect password. Try again.</p>
+    </div>
+    <button class="lbtn" id="loginBtn" onclick="tryLogin()">Sign In →</button>
+    <a class="back-link" href="journal.html">← Back to journal</a>
+  </div>
+</div>
+
+<!-- ADMIN UI -->
+<div id="adminUI">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-logo"><div class="dot"></div>CoffeeBeans</div>
+      <div class="tb-div"></div>
+      <span class="tb-badge">Admin</span>
+      <span class="server-status" id="serverStatus"></span>
+    </div>
+    <div class="tb-right">
+      <button class="tb-btn" onclick="window.open('journal.html','_blank')">View Journal ↗</button>
+      <button class="tb-btn primary" onclick="openWrite()">+ New Entry</button>
+      <button class="tb-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="admin-main">
+    <div class="sidebar">
+      <div>
+        <div class="sb-label">Overview</div>
+        <div class="stat-row">
+          <div class="stat-card"><span class="stat-label">Total Entries</span><span class="stat-val" id="totalCount">—</span></div>
+          <div class="stat-card"><span class="stat-label">Latest</span><span class="stat-val" id="latestDate" style="font-size:1rem">—</span></div>
+        </div>
+      </div>
+      <div class="sb-div"></div>
+      <div>
+        <div class="sb-label">Categories</div>
+        <div class="cat-list" id="catList">
+          <div class="cat-item on" onclick="setFilter('all',this)"><span>All</span><span class="cat-count" id="cAll">0</span></div>
+          <div class="cat-item" onclick="setFilter('Tula',this)"><span>Tula</span><span class="cat-count" id="cTula">0</span></div>
+          <div class="cat-item" onclick="setFilter('Saloobin',this)"><span>Saloobin</span><span class="cat-count" id="cSaloobin">0</span></div>
+          <div class="cat-item" onclick="setFilter('Pagninilay',this)"><span>Pagninilay</span><span class="cat-count" id="cPagninilay">0</span></div>
+          <div class="cat-item" onclick="setFilter('Kuwento',this)"><span>Kuwento</span><span class="cat-count" id="cKuwento">0</span></div>
+        </div>
+      </div>
+      <div class="sb-div"></div>
+      <div>
+        <div class="sb-label">Quick Actions</div>
+        <button class="tb-btn primary" style="width:100%;padding:.7rem;font-size:.65rem;border-radius:8px" onclick="openWrite()">+ Write New Entry</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="content-header">
+        <div>
+          <div class="content-title" id="contentTitle">All Entries</div>
+          <div class="content-sub" id="contentSub"></div>
+        </div>
+      </div>
+      <div class="entry-list" id="entryList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Write Panel -->
+<div class="panel-dim" id="dim" onclick="closeWrite()"></div>
+<div class="write-panel" id="writePanel">
+  <div class="wp-head">
+    <span class="wp-title">New Entry</span>
+    <button class="wp-close" onclick="closeWrite()">✕</button>
+  </div>
+  <div class="wp-body">
+    <div class="wfield">
+      <label>Category</label>
+      <select id="wType">
+        <option value="Tula">Tula — Poem</option>
+        <option value="Saloobin">Saloobin — Thoughts</option>
+        <option value="Pagninilay">Pagninilay — Reflection</option>
+        <option value="Kuwento">Kuwento — Story</option>
+      </select>
+    </div>
+    <div class="wfield">
+      <label>Title</label>
+      <input type="text" id="wTitle" placeholder="Ang pamagat ng entry...">
+    </div>
+    <div class="wfield">
+      <label>Body</label>
+      <textarea id="wBody" placeholder="Isulat ang iyong mga saloobin dito..." oninput="updateChar()"></textarea>
+      <div class="char-count" id="charCount">0 characters</div>
+    </div>
+  </div>
+  <div class="wp-foot">
+    <button class="wcancel" onclick="closeWrite()">Discard</button>
+    <button class="wpublish" id="publishBtn" onclick="publish()">Publish Entry ✦</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="tdot"></span><span id="tmsg"></span></div>
+
+<script>
+let token = sessionStorage.getItem('cb_token') || null;
+let filter = 'all';
+let allEntries = [];
+
+document.getElementById('pwInput').focus();
+
+// If already have token, skip login
+if(token){ bootAdmin(); }
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+async function tryLogin(){
+  const pw = document.getElementById('pwInput').value;
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try{
+    const r = await fetch('/api/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error);
+    token = data.token;
+    sessionStorage.setItem('cb_token', token);
+    bootAdmin();
+  } catch(e){
+    document.getElementById('lerr').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+    btn.disabled = false;
+    btn.textContent = 'Sign In →';
+  }
+}
+
+function bootAdmin(){
+  document.body.classList.remove('locked');
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminUI').classList.add('show');
+  loadAll();
+  checkServer();
+}
+
+async function doLogout(){
+  try{ await apiFetch('/api/logout','POST'); } catch(e){}
+  sessionStorage.removeItem('cb_token');
+  token = null;
+  document.body.classList.add('locked');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminUI').classList.remove('show');
+  document.getElementById('pwInput').value = '';
+}
+
+// ── API HELPERS ───────────────────────────────────────────────────────────────
+async function apiFetch(url, method='GET', body=null){
+  const opts = { method, headers:{ 'x-admin-token': token } };
+  if(body){ opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(body); }
+  const r = await fetch(url, opts);
+  if(r.status === 401){ doLogout(); throw new Error('Unauthorized'); }
+  return r;
+}
+
+async function checkServer(){
+  try{
+    const r = await fetch('/api/stats');
+    if(r.ok){
+      document.getElementById('serverStatus').innerHTML = '<span class="status-dot ok"></span>Connected';
+    }
+  } catch(e){
+    document.getElementById('serverStatus').innerHTML = '<span class="status-dot err"></span>Server offline';
+  }
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+async function loadAll(){
+  try{
+    const [eRes, sRes] = await Promise.all([
+      apiFetch('/api/entries'),
+      fetch('/api/stats')
+    ]);
+    allEntries = await eRes.json();
+    const stats = await sRes.json();
+    updateStats(stats);
+    render();
+  } catch(e){ toast('Failed to load entries.'); }
+}
+
+function updateStats(stats){
+  document.getElementById('totalCount').textContent = stats.total;
+  if(stats.latest){
+    const d = new Date(stats.latest).toLocaleDateString('en-PH',{month:'short',day:'numeric'});
+    document.getElementById('latestDate').textContent = d;
+  }
+  const byType = {};
+  stats.byType.forEach(r => byType[r.type] = r.count);
+  document.getElementById('cAll').textContent = stats.total;
+  ['Tula','Saloobin','Pagninilay','Kuwento'].forEach(t => {
+    document.getElementById('c'+t).textContent = byType[t] || 0;
+  });
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render(){
+  const list = filter==='all' ? allEntries : allEntries.filter(e=>e.type===filter);
+  const el = document.getElementById('entryList');
+  document.getElementById('contentSub').textContent = list.length + ' entr'+(list.length===1?'y':'ies');
+  el.innerHTML = '';
+  if(!list.length){
+    el.innerHTML = `<div class="empty-list"><span>✦</span><p>No entries yet${filter!=='all'?' in this category':''}.</p></div>`;
+    return;
+  }
+  list.forEach((e,i) => {
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.style.animationDelay = `${i*.04}s`;
+    const d = new Date(e.created_at).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+    const n = String(list.length-i).padStart(2,'0');
+    const preview = e.body.replace(/\n/g,' ').slice(0,90) + (e.body.length>90?'…':'');
+    row.innerHTML = `
+      <div class="er-num">${n}</div>
+      <div class="er-body">
+        <div class="er-top"><span class="er-chip">${e.type}</span></div>
+        <div class="er-title">${esc(e.title)}</div>
+        <div class="er-preview">${esc(preview)}</div>
+      </div>
+      <div class="er-meta">
+        <span class="er-date">${d}</span>
+        <button class="del-btn" title="Delete" onclick="delEntry(${e.id})">✕</button>
+      </div>`;
+    el.appendChild(row);
+  });
+}
+
+function setFilter(type, el){
+  filter = type;
+  document.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('contentTitle').textContent = type==='all'?'All Entries':type;
+  render();
+}
+
+// ── WRITE ─────────────────────────────────────────────────────────────────────
+function openWrite(){
+  document.getElementById('writePanel').classList.add('show');
+  document.getElementById('dim').classList.add('show');
+  setTimeout(()=>document.getElementById('wTitle').focus(),200);
+}
+function closeWrite(){
+  document.getElementById('writePanel').classList.remove('show');
+  document.getElementById('dim').classList.remove('show');
+  document.getElementById('wTitle').value='';
+  document.getElementById('wBody').value='';
+  document.getElementById('charCount').textContent='0 characters';
+}
+function updateChar(){
+  const l = document.getElementById('wBody').value.length;
+  document.getElementById('charCount').textContent = l + ' character'+(l===1?'':'s');
+}
+
+async function publish(){
+  const title = document.getElementById('wTitle').value.trim();
+  const body  = document.getElementById('wBody').value.trim();
+  const type  = document.getElementById('wType').value;
+  if(!title||!body){ toast('Please fill in title and body.'); return; }
+  const btn = document.getElementById('publishBtn');
+  btn.disabled = true; btn.textContent = 'Publishing…';
+  try{
+    const r = await apiFetch('/api/entries','POST',{type,title,body});
+    if(!r.ok) throw new Error();
+    closeWrite();
+    await loadAll();
+    toast('Entry published ✦');
+  } catch(e){ toast('Failed to publish. Check server.'); }
+  btn.disabled = false; btn.textContent = 'Publish Entry ✦';
+}
+
+// ── DELETE ────────────────────────────────────────────────────────────────────
+async function delEntry(id){
+  if(!confirm('Delete this entry? This cannot be undone.')) return;
+  try{
+    const r = await apiFetch(`/api/entries/${id}`,'DELETE');
+    if(!r.ok) throw new Error();
+    await loadAll();
+    toast('Entry deleted.');
+  } catch(e){ toast('Failed to delete.'); }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('tmsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>

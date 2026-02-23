@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoffeeBeans — Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&family=Instrument+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf8f4;--surface:#fff;--card:#fff;--card-hover:#fdf9f5;
+  --border:#ede8e0;--border-dark:#d5cdc0;
+  --accent:#c0633a;--accent-light:#d4845e;--accent-pale:#fdf0ea;
+  --text:#1e1916;--text-muted:#8c7e72;--text-soft:#6b5e54;--cream:#f5f0e8;
+  --green:#2e7d52;--green-pale:#edf5f0;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
+
+/* ══ AUTH GATE ══════════════════════════════════════════════════════════════ */
+#authGate{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg,#faf7f2 0%,#f0e8de 100%);
+  padding:1.5rem;
+}
+#authGate::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 20% 20%,rgba(192,99,58,.06),transparent 50%),
+             radial-gradient(circle at 80% 80%,rgba(192,99,58,.04),transparent 50%);
+}
+.auth-card{
+  position:relative;width:min(440px,100%);background:var(--surface);
+  border:1px solid var(--border);border-radius:6px;
+  box-shadow:0 8px 60px rgba(80,50,30,.1),0 1px 4px rgba(80,50,30,.05);
+  overflow:hidden;animation:fadeUp .45s ease both;
+}
+
+/* Tabs */
+.auth-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg)}
+.auth-tab{
+  flex:1;padding:.9rem 1rem;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);
+  background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;
+  cursor:pointer;transition:all .18s;
+}
+.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface)}
+.auth-tab:hover:not(.active){color:var(--text);background:var(--cream)}
+
+/* Panels */
+.auth-panel{display:none;padding:2.6rem 2.6rem 2rem;animation:fadeUp .3s ease both}
+.auth-panel.active{display:block}
+
+.auth-logo{
+  display:flex;align-items:center;gap:.5rem;font-family:'DM Sans',sans-serif;
+  font-size:.68rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:1.8rem;
+}
+.auth-logo svg{width:16px;height:16px;flex-shrink:0}
+.auth-headline{
+  font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;
+  line-height:1.1;color:var(--text);margin-bottom:.4rem;
+}
+.auth-headline em{font-style:italic;color:var(--accent)}
+.auth-sub{font-size:.8rem;color:var(--text-muted);line-height:1.65;margin-bottom:2rem;font-weight:300}
+
+/* Fields */
+.field-wrap{margin-bottom:1.1rem}
+.field-label{
+  display:block;font-size:.63rem;font-weight:500;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem;
+}
+.field-input{
+  width:100%;padding:.72rem 1rem;background:var(--bg);border:1px solid var(--border);
+  border-radius:3px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);
+  transition:border-color .18s,box-shadow .18s;outline:none;
+}
+.field-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(192,99,58,.08)}
+.field-input::placeholder{color:var(--border-dark)}
+.field-hint{font-size:.7rem;color:var(--text-muted);margin-top:.35rem;line-height:1.4}
+
+/* Strength */
+.strength-wrap{margin-top:.45rem;display:none}
+.strength-track{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.strength-bar{height:100%;width:0%;border-radius:2px;transition:width .3s,background .3s}
+.strength-label{font-size:.65rem;margin-top:.3rem}
+
+/* Button */
+.auth-btn{
+  width:100%;padding:.82rem;background:var(--accent);color:#fff;border:none;
+  border-radius:3px;cursor:pointer;margin-top:.6rem;font-family:'DM Sans',sans-serif;
+  font-size:.75rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  transition:background .18s,transform .12s,box-shadow .18s;
+}
+.auth-btn:hover{background:var(--accent-light);transform:translateY(-1px);box-shadow:0 4px 16px rgba(192,99,58,.25)}
+.auth-btn:active{transform:translateY(0);box-shadow:none}
+.auth-btn:disabled{opacity:.55;pointer-events:none}
+
+/* Alerts */
+.alert{display:none;margin-top:1rem;padding:.7rem 1rem;border-radius:3px;font-size:.76rem;line-height:1.5}
+.alert.error{background:#fff2ef;border:1px solid #f4c6b4;color:#b04020}
+.alert.success{background:var(--green-pale);border:1px solid #a8d5be;color:var(--green)}
+
+.auth-footer{
+  text-align:center;padding:.9rem 2.6rem 1.6rem;font-size:.7rem;
+  color:var(--text-muted);border-top:1px solid var(--border);
+}
+.auth-footer button{
+  background:none;border:none;color:var(--accent);cursor:pointer;
+  font-size:.7rem;font-family:'DM Sans',sans-serif;text-decoration:underline;padding:0;
+}
+
+/* ══ APP ════════════════════════════════════════════════════════════════════ */
+#app{display:none}
+header{
+  position:fixed;top:0;left:0;right:0;z-index:800;height:56px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 2.8rem;
+  background:rgba(250,248,244,.93);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);
+}
+.logo{
+  display:flex;align-items:center;gap:.5rem;font-family:'DM Sans',sans-serif;font-weight:500;
+  font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);text-decoration:none;
+}
+.logo-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.75)}}
+.header-right{display:flex;align-items:center;gap:1.2rem}
+.nav-user,.nav-date{font-family:'Instrument Mono',monospace;font-size:.6rem;color:var(--text-muted);letter-spacing:.06em}
+.logout-btn{
+  font-family:'DM Sans',sans-serif;font-size:.63rem;font-weight:500;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--text-muted);background:none;border:1px solid var(--border);
+  border-radius:2px;padding:.28rem .72rem;cursor:pointer;transition:all .18s;
+}
+.logout-btn:hover{color:var(--accent);border-color:var(--accent-light)}
+
+.hero{
+  padding:116px 2.8rem 56px;max-width:1080px;margin:0 auto;
+  display:grid;grid-template-columns:1fr auto;align-items:end;gap:2rem;
+}
+.hero-kicker{
+  font-family:'Instrument Mono',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);display:flex;align-items:center;gap:.7rem;margin-bottom:1.3rem;animation:fadeUp .7s ease both;
+}
+.hero-kicker::before{content:'';width:24px;height:1px;background:var(--accent)}
+.hero-title{
+  font-family:'Cormorant Garamond',serif;font-size:clamp(3rem,6vw,5.5rem);font-weight:300;
+  line-height:.95;letter-spacing:-.01em;color:var(--text);margin-bottom:1.1rem;animation:fadeUp .7s .08s ease both;
+}
+.hero-title em{font-style:italic;color:var(--accent)}
+.hero-desc{font-size:.84rem;line-height:1.8;color:var(--text-muted);max-width:380px;font-weight:300;animation:fadeUp .7s .16s ease both}
+.hero-stats{text-align:right;animation:fadeUp .7s .24s ease both;flex-shrink:0;padding-bottom:.3rem}
+.stat-num{font-family:'Cormorant Garamond',serif;font-size:3.5rem;font-weight:300;color:var(--accent);line-height:1;display:block}
+.stat-label{font-family:'Instrument Mono',monospace;font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted)}
+
+.filter-wrap{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface)}
+.filter-inner{max-width:1080px;margin:0 auto;padding:1rem 2.8rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.filter-label{font-family:'Instrument Mono',monospace;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+.pills{display:flex;gap:.35rem;flex-wrap:wrap;flex:1}
+.pill{
+  font-family:'DM Sans',sans-serif;font-size:.65rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  padding:.26rem .8rem;border-radius:100px;border:1px solid var(--border);background:transparent;
+  color:var(--text-muted);cursor:pointer;transition:all .15s;
+}
+.pill:hover{color:var(--text);border-color:var(--border-dark)}
+.pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.count-badge{font-family:'Instrument Mono',monospace;font-size:.6rem;color:var(--text-muted);letter-spacing:.04em;white-space:nowrap;margin-left:auto}
+
+.grid-wrap{background:var(--cream);min-height:60vh}
+.grid{
+  max-width:1080px;margin:0 auto;padding:2rem 2.8rem 5rem;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);
+}
+.card{background:var(--card);padding:2rem;overflow:hidden;transition:background .22s,box-shadow .22s;animation:fadeUp .45s ease both}
+.card:hover{background:var(--card-hover);box-shadow:inset 0 0 0 1px var(--border-dark)}
+.card.big{grid-column:span 2}
+.card.big .ctitle{font-size:1.9rem}
+.card.big .cbody{-webkit-line-clamp:7;font-size:.88rem}
+.ctop{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem}
+.chip{
+  font-family:'Instrument Mono',monospace;font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;
+  padding:.2rem .6rem;border-radius:2px;background:var(--accent-pale);border:1px solid rgba(192,99,58,.2);color:var(--accent);
+}
+.cnum{font-family:'Instrument Mono',monospace;font-size:.58rem;color:var(--text-muted);opacity:.5}
+.ctitle{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:300;line-height:1.2;color:var(--text);margin-bottom:.9rem}
+.cbody{
+  font-family:'Cormorant Garamond',serif;font-size:.88rem;font-weight:300;line-height:1.85;color:var(--text-soft);
+  white-space:pre-wrap;word-break:break-word;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;
+}
+.cfoot{margin-top:1.5rem;display:flex;align-items:center;justify-content:space-between;padding-top:1rem;border-top:1px solid var(--border)}
+.cdate{font-family:'Instrument Mono',monospace;font-size:.58rem;color:var(--text-muted);letter-spacing:.05em}
+.ctype-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.4}
+
+.skeleton{background:var(--card);padding:2rem;animation:shimmer 1.4s ease infinite}
+@keyframes shimmer{0%,100%{opacity:.6}50%{opacity:1}}
+.skel-line{height:10px;background:var(--border);border-radius:3px;margin-bottom:.8rem}
+.skel-line.short{width:35%}.skel-line.med{width:60%;height:16px}
+.empty{grid-column:1/-1;padding:6rem 2rem;text-align:center;background:var(--card)}
+.empty h3{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;font-style:italic;color:var(--text-soft);margin-bottom:.4rem}
+.empty p{font-family:'Instrument Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)}
+
+footer{background:var(--surface);border-top:1px solid var(--border);padding:1.6rem 2.8rem;display:flex;align-items:center;justify-content:space-between}
+.fl{font-family:'DM Sans',sans-serif;font-weight:500;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted)}
+.fr{font-family:'Instrument Mono',monospace;font-size:.58rem;color:var(--text-muted);font-style:italic;letter-spacing:.05em}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.card.big{grid-column:span 2}.hero{grid-template-columns:1fr}.hero-stats{display:none}}
+@media(max-width:600px){
+  header{padding:0 1.2rem}.hero{padding:100px 1.5rem 50px}.filter-inner{padding:1rem 1.5rem}
+  .grid{grid-template-columns:1fr;padding:1.5rem}.card.big{grid-column:span 1}.card.big .ctitle{font-size:1.5rem}
+  footer{padding:1.2rem 1.5rem;flex-direction:column;gap:.4rem;text-align:center}
+  .auth-panel{padding:2rem 1.5rem 1.6rem}.auth-footer{padding:.9rem 1.5rem 1.5rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH GATE ══════════════════════════════════════════════════════════════ -->
+<div id="authGate">
+  <div class="auth-card">
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <!-- Sign In Panel -->
+    <div class="auth-panel active" id="panelLogin">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="12" rx="10" ry="7" stroke="#c0633a" stroke-width="1.5"/><path d="M12 5 Q10 12 12 19" stroke="#c0633a" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
+        CoffeeBeans
+      </div>
+      <h2 class="auth-headline">Welcome<br>back, <em>reader.</em></h2>
+      <p class="auth-sub">Sign in to continue reading the journal.</p>
+      <div class="field-wrap">
+        <label class="field-label" for="siUser">Username</label>
+        <input class="field-input" id="siUser" type="text" placeholder="your username" autocomplete="username">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="siPass">Password</label>
+        <input class="field-input" id="siPass" type="password" placeholder="your password" autocomplete="current-password">
+      </div>
+      <button class="auth-btn" id="siBtn" onclick="doSignIn()">Enter the Journal</button>
+      <div class="alert error" id="siError"></div>
+    </div>
+
+    <!-- Create Account Panel -->
+    <div class="auth-panel" id="panelRegister">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="12" rx="10" ry="7" stroke="#c0633a" stroke-width="1.5"/><path d="M12 5 Q10 12 12 19" stroke="#c0633a" stroke-width="1.3" stroke-linecap="round" fill="none"/></svg>
+        CoffeeBeans
+      </div>
+      <h2 class="auth-headline">Start your<br><em>reading</em> journey.</h2>
+      <p class="auth-sub">Create a free account to access the journal.</p>
+      <div class="field-wrap">
+        <label class="field-label" for="ruName">Full Name</label>
+        <input class="field-input" id="ruName" type="text" placeholder="e.g. Maria Santos" autocomplete="name" oninput="validateForm()">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="ruUser">Username</label>
+        <input class="field-input" id="ruUser" type="text" placeholder="e.g. maria_reads" autocomplete="username" oninput="validateForm()">
+        <p class="field-hint">3–20 characters. Letters, numbers, underscores only.</p>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="ruPass">Password</label>
+        <input class="field-input" id="ruPass" type="password" placeholder="at least 6 characters" autocomplete="new-password" oninput="checkStrength();validateForm()">
+        <div class="strength-wrap" id="strengthWrap">
+          <div class="strength-track"><div class="strength-bar" id="strengthBar"></div></div>
+          <p class="strength-label" id="strengthLabel"></p>
+        </div>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="ruPass2">Confirm Password</label>
+        <input class="field-input" id="ruPass2" type="password" placeholder="repeat your password" autocomplete="new-password" oninput="validateForm()">
+      </div>
+      <button class="auth-btn" id="ruBtn" onclick="doRegister()" disabled>Create My Account</button>
+      <div class="alert error" id="ruError"></div>
+      <div class="alert success" id="ruSuccess"></div>
+    </div>
+
+    <div class="auth-footer">
+      <span id="footerText">New here?&nbsp;</span>
+      <button id="footerBtn" onclick="switchTab('register')">Create an account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <header>
+    <a class="logo" href="#"><div class="logo-dot"></div>CoffeeBeans</a>
+    <div class="header-right">
+      <span class="nav-user" id="navUser"></span>
+      <span class="nav-date" id="hDate"></span>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </header>
+  <div class="hero">
+    <div class="hero-left">
+      <p class="hero-kicker">Personal Journal</p>
+      <h1 class="hero-title">Words brewed<br>with <em>intention.</em></h1>
+      <p class="hero-desc">Poems, reflections, and slow thoughts — poured one cup at a time.</p>
+    </div>
+    <div class="hero-stats">
+      <span class="stat-num" id="statNum">—</span>
+      <span class="stat-label">Entries</span>
+    </div>
+  </div>
+  <div class="filter-wrap">
+    <div class="filter-inner">
+      <span class="filter-label">Browse</span>
+      <div class="pills">
+        <button class="pill on" onclick="doFilter('all',this)">All</button>
+        <button class="pill" onclick="doFilter('Tula',this)">Tula</button>
+        <button class="pill" onclick="doFilter('Saloobin',this)">Saloobin</button>
+        <button class="pill" onclick="doFilter('Pagninilay',this)">Pagninilay</button>
+        <button class="pill" onclick="doFilter('Kuwento',this)">Kuwento</button>
+      </div>
+      <span class="count-badge" id="countBadge"></span>
+    </div>
+  </div>
+  <div class="grid-wrap"><div class="grid" id="grid"></div></div>
+  <footer>
+    <span class="fl">CoffeeBeans</span>
+    <span class="fr">Poured with intention, one entry at a time.</span>
+  </footer>
+</div>
+
+<script>
+// ══ STORAGE ══════════════════════════════════════════════════════════════════
+const USERS_KEY   = 'cb_users_v1';
+const SESSION_KEY = 'cb_session_v1';
+
+const getUsers   = () => { try{ return JSON.parse(localStorage.getItem(USERS_KEY))||{}; }catch(e){return{};} };
+const saveUsers  = u  => localStorage.setItem(USERS_KEY, JSON.stringify(u));
+const getSession = () => { try{ return JSON.parse(sessionStorage.getItem(SESSION_KEY)); }catch(e){return null;} };
+const setSession = s  => sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
+const clearSession = ()=> sessionStorage.removeItem(SESSION_KEY);
+
+// SHA-256 hash with a salt (client-side demo only — use bcrypt on a real server)
+async function hashPass(pass){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('cb:' + pass));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ══ TAB ══════════════════════════════════════════════════════════════════════
+function switchTab(tab){
+  const login = tab==='login';
+  document.getElementById('tabLogin').classList.toggle('active', login);
+  document.getElementById('tabRegister').classList.toggle('active', !login);
+  document.getElementById('panelLogin').classList.toggle('active', login);
+  document.getElementById('panelRegister').classList.toggle('active', !login);
+  document.getElementById('footerText').textContent = login ? 'New here? ' : 'Already have an account? ';
+  document.getElementById('footerBtn').textContent  = login ? 'Create an account' : 'Sign in instead';
+  document.getElementById('footerBtn').onclick = ()=> switchTab(login ? 'register' : 'login');
+  ['siError','ruError','ruSuccess'].forEach(id=>{ const e=document.getElementById(id); e.style.display='none'; e.textContent=''; });
+}
+
+// ══ STRENGTH ═════════════════════════════════════════════════════════════════
+function checkStrength(){
+  const v = document.getElementById('ruPass').value;
+  const wrap=document.getElementById('strengthWrap'), bar=document.getElementById('strengthBar'), lbl=document.getElementById('strengthLabel');
+  if(!v){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  let s=0;
+  if(v.length>=6) s++; if(v.length>=10) s++; if(/[A-Z]/.test(v)) s++; if(/[0-9]/.test(v)) s++; if(/[^A-Za-z0-9]/.test(v)) s++;
+  const L=[{w:'20%',bg:'#e85d3a',t:'Too weak'},{w:'40%',bg:'#e87a3a',t:'Weak'},{w:'60%',bg:'#e8a83a',t:'Fair'},{w:'80%',bg:'#6ab04c',t:'Strong'},{w:'100%',bg:'#2e7d52',t:'Very strong'}];
+  const l=L[Math.min(s,L.length)-1];
+  bar.style.width=l.w; bar.style.background=l.bg;
+  lbl.textContent=l.t; lbl.style.color=l.bg;
+}
+
+function validateForm(){
+  const name  = document.getElementById('ruName').value.trim();
+  const user  = document.getElementById('ruUser').value.trim();
+  const pass  = document.getElementById('ruPass').value;
+  const pass2 = document.getElementById('ruPass2').value;
+  const ok = name.length>=1 && /^[a-zA-Z0-9_]{3,20}$/.test(user) && pass.length>=6 && pass===pass2;
+  document.getElementById('ruBtn').disabled = !ok;
+}
+
+// ══ REGISTER ═════════════════════════════════════════════════════════════════
+async function doRegister(){
+  const name  = document.getElementById('ruName').value.trim();
+  const user  = document.getElementById('ruUser').value.trim().toLowerCase();
+  const pass  = document.getElementById('ruPass').value;
+  const pass2 = document.getElementById('ruPass2').value;
+  const errEl = document.getElementById('ruError');
+  const okEl  = document.getElementById('ruSuccess');
+  errEl.style.display='none'; okEl.style.display='none';
+
+  if(!name)                               return showAlert('ruError','Please enter your full name.');
+  if(!/^[a-zA-Z0-9_]{3,20}$/.test(user)) return showAlert('ruError','Username must be 3–20 characters (letters, numbers, underscores).');
+  if(pass.length < 6)                     return showAlert('ruError','Password must be at least 6 characters.');
+  if(pass !== pass2)                      return showAlert('ruError','Passwords do not match. Please try again.');
+
+  const users = getUsers();
+  if(users[user]) return showAlert('ruError','That username is already taken. Please choose another.');
+
+  const btn = document.getElementById('ruBtn');
+  btn.textContent='Creating account…'; btn.disabled=true;
+
+  const hashed = await hashPass(pass);
+  users[user] = { name, username: user, password: hashed, joinedAt: new Date().toISOString() };
+  saveUsers(users);
+
+  okEl.className='alert success'; okEl.style.display='block';
+  okEl.textContent=`Account created! Welcome, ${name}. Taking you in…`;
+
+  setTimeout(()=>{ setSession({ username: user, name }); showApp(); }, 1200);
+}
+
+// ══ SIGN IN ══════════════════════════════════════════════════════════════════
+async function doSignIn(){
+  const user = document.getElementById('siUser').value.trim().toLowerCase();
+  const pass = document.getElementById('siPass').value;
+  const errEl = document.getElementById('siError');
+  errEl.style.display='none';
+
+  if(!user||!pass) return showAlert('siError','Please enter both username and password.');
+
+  const btn = document.getElementById('siBtn');
+  btn.textContent='Signing in…'; btn.disabled=true;
+
+  // Check local reader accounts
+  const users = getUsers();
+  if(users[user]){
+    const hashed = await hashPass(pass);
+    if(users[user].password === hashed){
+      setSession({ username: user, name: users[user].name });
+      showApp();
+      btn.textContent='Enter the Journal'; btn.disabled=false;
+      return;
+    } else {
+      showAlert('siError','Incorrect password. Please try again.');
+      btn.textContent='Enter the Journal'; btn.disabled=false;
+      return;
+    }
+  }
+
+  // Fallback: try server admin login
+  try{
+    const res = await fetch('/api/login',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ password: pass })
+    });
+    const data = await res.json();
+    if(res.ok && data.token){
+      setSession({ username: user, name: user, adminToken: data.token });
+      showApp();
+    } else {
+      showAlert('siError','No account found with that username. Please create an account first.');
+    }
+  } catch(e){
+    showAlert('siError','No account found with that username. Please create an account first.');
+  }
+
+  btn.textContent='Enter the Journal'; btn.disabled=false;
+}
+
+function showAlert(id, msg){
+  const el=document.getElementById(id);
+  el.className='alert error'; el.textContent=msg; el.style.display='block';
+}
+
+// ══ LOGOUT ═══════════════════════════════════════════════════════════════════
+async function doLogout(){
+  const s = getSession();
+  if(s?.adminToken){
+    try{ await fetch('/api/logout',{method:'POST',headers:{'x-admin-token':s.adminToken}}); }catch(e){}
+  }
+  clearSession();
+  document.getElementById('app').style.display='none';
+  document.getElementById('authGate').style.display='flex';
+  document.getElementById('siUser').value='';
+  document.getElementById('siPass').value='';
+  switchTab('login');
+}
+
+// ══ SHOW APP ═════════════════════════════════════════════════════════════════
+function showApp(){
+  document.getElementById('authGate').style.display='none';
+  document.getElementById('app').style.display='block';
+  const s = getSession();
+  document.getElementById('navUser').textContent = s ? `☕ ${s.name||s.username}` : '';
+  loadStats(); load();
+}
+
+// ══ INIT ═════════════════════════════════════════════════════════════════════
+(function(){
+  document.getElementById('hDate').textContent =
+    new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+
+  // Keyboard shortcuts
+  const next = {'siUser':'siPass','ruName':'ruUser','ruUser':'ruPass','ruPass':'ruPass2'};
+  const submit = {'siPass': doSignIn, 'ruPass2': doRegister};
+  Object.keys({...next,...submit}).forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('keydown', e=>{
+      if(e.key!=='Enter') return;
+      if(next[id]) document.getElementById(next[id]).focus();
+      else if(submit[id]) submit[id]();
+    });
+  });
+
+  const s = getSession();
+  if(s) showApp();
+})();
+
+// ══ JOURNAL ENTRIES ══════════════════════════════════════════════════════════
+let filter = 'all';
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+async function loadStats(){
+  try{ const d=await(await fetch('/api/stats')).json(); document.getElementById('statNum').textContent=d.total??'—'; }catch(e){}
+}
+
+function showSkeletons(){
+  document.getElementById('grid').innerHTML=[1,2,3].map(()=>`
+    <div class="skeleton"><div class="skel-line short"></div>
+    <div class="skel-line med" style="margin-bottom:1rem"></div>
+    <div class="skel-line"></div><div class="skel-line"></div><div class="skel-line short"></div></div>`).join('');
+}
+
+async function load(){
+  showSkeletons();
+  try{
+    const url = filter==='all'?'/api/entries':`/api/entries?type=${filter}`;
+    render(await(await fetch(url)).json());
+  }catch(e){
+    document.getElementById('grid').innerHTML='<div class="empty"><h3>Cannot connect to server.</h3><p>Make sure the server is running on port 3000.</p></div>';
+  }
+}
+
+function render(entries){
+  const g=document.getElementById('grid');
+  document.getElementById('countBadge').textContent=entries.length+' entr'+(entries.length===1?'y':'ies');
+  g.innerHTML='';
+  if(!entries.length){
+    g.innerHTML=`<div class="empty"><h3>No entries here yet.</h3><p>${filter==='all'?'The journal awaits.':'Nothing in this category.'}</p></div>`;
+    return;
+  }
+  entries.forEach((e,i)=>{
+    const card=document.createElement('div');
+    card.className='card'+(i===0?' big':'');
+    card.style.animationDelay=`${i*.05}s`;
+    const d=new Date(e.created_at).toLocaleDateString('en-PH',{month:'long',day:'numeric',year:'numeric'});
+    card.innerHTML=`
+      <div class="ctop"><span class="chip">${esc(e.type)}</span><span class="cnum">#${String(entries.length-i).padStart(2,'0')}</span></div>
+      <h2 class="ctitle">${esc(e.title)}</h2>
+      <p class="cbody">${esc(e.body)}</p>
+      <div class="cfoot"><span class="cdate">${d}</span><div class="ctype-dot"></div></div>`;
+    g.appendChild(card);
+  });
+}
+
+function doFilter(type,btn){
+  filter=type;
+  document.querySelectorAll('.pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  load();
+}
+</script>
+</body>
+</html>
