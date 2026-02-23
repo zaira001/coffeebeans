@@ -11,15 +11,3 @@
     "cors": "^2.8.5"
   }
 }
-```
-
-Run `npm install` once after editing to generate `package-lock.json`.
-
----
-
-## 2. Create a `.gitignore`
-
-Create a file named `.gitignore` in your root folder with this content:
-```
-node_modules/
-coffeebeans.db
